@@ -11,8 +11,8 @@ Given a single expressive vibe word, suggest exactly four things that match that
 
 Return the following four items — and all four must be included:
 
-1. A wine (include varietal, winery, and year)
-2. A music album (artist and album title)
+1. A wine (include varietal, winery, year, and why you recommended it)
+2. A music album (artist and album title and why you recommended it)
 3. A paired or group activity (playful, suggestive, not explicit)
 4. A board game (real or made-up — but must sound fun and fit the vibe)
 
