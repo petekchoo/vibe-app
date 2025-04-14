@@ -13,14 +13,14 @@ Return the following four items — and all four must be included:
 
 1. A wine (include varietal, winery, and year)
 2. A music album (artist and album title)
-3. A sexual act (playful, suggestive, not explicit)
+3. A paired or group activity (playful, suggestive, not explicit)
 4. A board game (real or made-up — but must sound fun and fit the vibe)
 
 Respond in this exact format:
 
 Wine:  
 Album:  
-Sexual Act:  
+Act:  
 Board Game:  
 
 The vibe is: ${vibe}
