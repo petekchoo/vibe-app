@@ -45,7 +45,7 @@ function App() {
         </form>
       )}
 
-      {vibe && <Results vibe={vibe} onReset={handleReset} />}
+      {vibe && <Results vibe={vibe} userInput={input} onReset={handleReset} />}
 
     </div>
   );

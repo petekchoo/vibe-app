@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { generateRecommendations } from "../utils/generateRecs";
 
-function Results({ vibe, onReset }) {
+function Results({ vibe, userInput, onReset }) {
   const [recs, setRecs] = useState(null);
   const [regenCount, setRegenCount] = useState(0); // 🔁 for forcing refresh
 
@@ -30,7 +30,11 @@ function Results({ vibe, onReset }) {
 
   return (
     <div className="mt-8 text-left max-w-lg">
-      <h2 className="text-2xl font-semibold mb-4">Sounds like you're feeling <span className="italic">{vibe}</span>.</h2>
+      <h2 className="text-lg text-gray-700 mb-4">
+        Your mood: <span className="font-medium italic">{userInput}</span> &nbsp;
+        <span className="text-sm text-gray-500">→</span> &nbsp;
+        your vibe: <span className="italic font-semibold">{vibe}</span>
+      </h2>
 
       {recs.raw ? (
         <pre className="bg-white p-4 rounded shadow whitespace-pre-wrap">{recs.raw}</pre>
