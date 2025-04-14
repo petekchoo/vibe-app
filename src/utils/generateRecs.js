@@ -20,7 +20,7 @@ Respond in this exact format:
 
 Wine:  
 Album:  
-Act:  
+Activity:  
 Board Game:  
 
 The vibe is: ${vibe}
