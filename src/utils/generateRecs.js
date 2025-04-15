@@ -1,7 +1,7 @@
 import { supabase } from "../lib/supabase.js";
 
 // Accept both the derived vibe and original user input
-export async function generateRecommendations(vibe, originalUserInput) {
+export async function generateRecommendations(vibe, originalUserInput, regenerate = false) {
   
   // Step 1: Try to fetch from Supabase, checking if regenerate has been selected or not
 
