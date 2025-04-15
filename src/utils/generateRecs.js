@@ -3,23 +3,20 @@ import { supabase } from "../lib/supabase.js";
 // Accept both the derived vibe and original user input
 export async function generateRecommendations(vibe, originalUserInput, regenerate = false) {
   
-  // Step 1: Try to fetch from Supabase, checking if regenerate has been selected or not
+  console.log("regenerate param value:", regenerate);
 
+  // Step 1: Try to fetch from Supabase, checking if regenerate has been selected or not
   if (!regenerate) {
-      const { data: recs, error: fetchError } = await supabase
-      .from("vibe_recs")
-      .select("raw_output")
-      .eq("derived_vibe", vibe)
-      .order('random()', { ascending: true })
-      .limit(1);
-    
+    const { data, error: fetchError } = await supabase
+    .rpc("get_random_vibe", { vibe_input: vibe });
+  
     if (fetchError) {
-      console.error("Supabase fetch error:", fetchError.message);
+      console.error("❌ Supabase RPC error:", fetchError.message);
     }
     
-    if (recs && recs.length > 0) {
-      return { raw: recs[0].raw_output };
-    }
+    if (data?.length > 0) {
+      return { raw: data[0].raw_output };
+    }  
   }
 
   const prompt = `

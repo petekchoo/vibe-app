@@ -9,8 +9,10 @@ function Results({ vibe, userInput, onReset }) {
     let cancelled = false;
   
     async function getData() {
+      
       setRecs(null); // Optional: show loading indicator
-      const results = await generateRecommendations(vibe, userInput, regenerate = false);
+      console.log("Calling generateRecommendations with regen:", regenCount > 0);
+      const results = await generateRecommendations(vibe, userInput, regenCount > 0);
       if (!cancelled) {
         setRecs(results);
       }
