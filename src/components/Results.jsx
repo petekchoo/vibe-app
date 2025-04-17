@@ -83,13 +83,6 @@ function Results({ vibe, userInput, selectedTypes, onReset }) {
         Regenerate recommendations for this vibe!
       </button>
 
-      <a
-        href={`mailto:?subject=Check out my vibe-based recs&body=${encodeURIComponent(body)}`}
-        className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-      >
-        Share my vibe recommendations!
-      </a>
-
       <button
         onClick={onReset}
         className="mt-4 px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 block"
