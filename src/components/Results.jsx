@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
-import { generateRecommendations } from "../utils/generateRecs";
+import { getRecsForTypes } from "../utils/generateRecs";
+import { CATEGORY_OPTIONS } from "../constants/categoryOptions";
 
-function Results({ vibe, userInput, onReset }) {
+function Results({ vibe, userInput, selectedTypes, onReset }) {
   const [recs, setRecs] = useState(null);
   const [regenCount, setRegenCount] = useState(0); // 🔁 for forcing refresh
+  const normalizedVibe = vibe.toLowerCase().trim();
+  const getCategoryMeta = (key) =>
+    CATEGORY_OPTIONS.find((c) => c.key === key) || { label: key, emoji: "✨" };
+
 
   useEffect(() => {
     let cancelled = false;
   
     async function getData() {
-      
-      setRecs(null); // Optional: show loading indicator
-      console.log("Calling generateRecommendations with regen:", regenCount > 0);
-      const results = await generateRecommendations(vibe, userInput, regenCount > 0);
+      setRecs(null); // Clear out stale results if needed
+      const results = await getRecsForTypes(vibe, selectedTypes, userInput, regenCount > 0);
       if (!cancelled) {
         setRecs(results);
       }
@@ -23,11 +26,20 @@ function Results({ vibe, userInput, onReset }) {
     return () => {
       cancelled = true;
     };
-  }, [vibe, regenCount]); // 🔁 add regenCount to trigger effect
-
+  }, [vibe, selectedTypes, regenCount]);
+  
   if (!recs) return <p className="mt-4 text-gray-600">Generating recommendations...</p>;
 
-  const { wine, album, act, boardGame } = recs;
+  const { wine, album, activity, boardGame } = recs;
+  const emojiForType = {
+    wine: "🍷",
+    album: "🎶",
+    activity: "🔥",
+    boardgame: "🎲",
+  };
+  
+  const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1);  
+
   const body = `I'm feeling ${vibe}!\n\n${recs.raw}`;
 
   return (
@@ -38,11 +50,31 @@ function Results({ vibe, userInput, onReset }) {
         your vibe: <span className="italic font-semibold">{vibe}</span>
       </h2>
 
-      {recs.raw ? (
-        <pre className="bg-white p-4 rounded shadow whitespace-pre-wrap">{recs.raw}</pre>
-      ) : (
-        <p className="text-gray-500 italic">No vibe content returned.</p>
-      )}
+      {recs &&
+        Object.entries(recs).map(([categoryKey, recData]) => {
+          const { label, emoji } = getCategoryMeta(categoryKey);
+
+          return (
+            <div
+              key={categoryKey}
+              className="bg-white rounded-xl shadow p-4 mb-4 border border-gray-200"
+            >
+              <h2 className="text-xl font-semibold mb-2">
+                {emoji} {label}
+              </h2>
+
+              <p className="mb-1">
+                <strong>Recommendation:</strong> {recData.recommendation}
+              </p>
+
+              <p className="italic text-sm text-gray-600">{recData.rationale}</p>
+
+              <p className="text-xs mt-2 text-right text-gray-400">
+                Source: {recData.source === "gpt" ? "Generated" : "From Library"}
+              </p>
+            </div>
+          );
+        })}
 
       <button
         onClick={() => setRegenCount(c => c + 1)}

@@ -1,21 +1,34 @@
 import { useState } from "react";
 import { deriveVibe } from "./utils/deriveVibe";
 import Results from "./components/Results";
+import { CATEGORY_OPTIONS } from "./constants/categoryOptions"; // adjust path as needed
 
 function App() {
   const [input, setInput] = useState("");
   const [vibe, setVibe] = useState("");
+  
+  const [selectedTypes, setSelectedTypes] = useState([]);  
+
+  const canSubmit = input.trim().length > 0 && selectedTypes.length > 0;
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
     const derived = await deriveVibe(input);
     setVibe(derived);
+
+    if (selectedTypes.length === 0) return;
   };
 
   const handleReset = () => {
     setInput("");
     setVibe("");
   };
+
+  function toggleType(type) {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  }  
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-100 to-indigo-100 text-gray-900 p-6">
@@ -36,16 +49,44 @@ function App() {
             onChange={(e) => setInput(e.target.value)}
             className="px-4 py-2 rounded border border-gray-300 shadow w-80"
           />
+          
+          <div className="flex flex-wrap gap-2 mt-4">
+            {CATEGORY_OPTIONS.map(({ key, label, emoji }) => {
+              const isSelected = selectedTypes.includes(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleType(key)}
+                  className={`px-4 py-2 rounded-full border transition duration-200 ${
+                    isSelected
+                      ? "bg-blue-600 text-white border-blue-700 shadow"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  {emoji} {label}
+                </button>
+              );
+            })}
+          </div>
+
+
           <button
             type="submit"
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            disabled={!canSubmit}
+            className={`mt-6 px-6 py-3 rounded-lg text-white font-semibold transition ${
+              !canSubmit
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            Generate vibe recommendations...
+            Generate vibe-based recommendations
           </button>
+
         </form>
       )}
 
-      {vibe && <Results vibe={vibe} userInput={input} onReset={handleReset} />}
+      {vibe && <Results vibe={vibe} userInput={input} selectedTypes ={selectedTypes} onReset={handleReset} />}
 
     </div>
   );

@@ -1,77 +1,71 @@
 import { supabase } from "../lib/supabase.js";
+import { callOpenAI } from "./callOpenAI"; // your GPT call helper
+import { buildPrompt } from "./buildPrompt"; // your prompt generator
 
-// Accept both the derived vibe and original user input
-export async function generateRecommendations(vibe, originalUserInput, regenerate = false) {
-  
-  console.log("regenerate param value:", regenerate);
+export async function getRecsForTypes(vibe, selectedTypes, userInput, regenerate = false) {
+  const results = {};
+  const normalizedVibe = vibe.toLowerCase().trim();
 
-  // Step 1: Try to fetch from Supabase, checking if regenerate has been selected or not
-  if (!regenerate) {
-    const { data, error: fetchError } = await supabase
-    .rpc("get_random_vibe", { vibe_input: vibe });
-  
-    if (fetchError) {
-      console.error("❌ Supabase RPC error:", fetchError.message);
+  for (const category of selectedTypes) {
+    // Step 1: Try to fetch a pregenerated rec from Supabase via RPC
+    
+    // console.log('Checking vibe library for:', normalizedVibe)
+    if (!regenerate) {
+    
+      const { data, error: fetchError } = await supabase.rpc("get_random_vibe", {
+        vibe_input: normalizedVibe,
+        category_input: category,
+      });
+
+      if (fetchError) {
+        console.error(`❌ Supabase RPC error for ${category}:`, fetchError.message);
+      }
+      
+      // console.log('Returning value from Library:', data)
+      if (data && data.length > 0) {
+        results[category] = {
+          recommendation: data[0].recommendation,
+          rationale: data[0].rationale,
+          source: "library",
+          id: data[0].id,
+          created_at: data[0].created_at,
+        };
+        continue; // Skip to next category
+      }
     }
     
-    if (data?.length > 0) {
-      return { raw: data[0].raw_output };
-    }  
-  }
+    // Step 2: No match found — call GPT to generate a new rec
+    const prompt = buildPrompt(normalizedVibe, category);
+    const gptResponse = await callOpenAI(prompt);
 
-  const prompt = `
-You are a chaotic good cultural concierge.
+    // Step 3: Parse GPT response into recommendation + rationale
+    const [recLine, rationaleLine] = gptResponse.split("\n").map((line) => line.trim());
+    const recommendation = recLine?.replace(/^1\.?\s*Recommendation:\s*/i, "").trim();
+    const rationale = rationaleLine?.replace(/^2\.?\s*Rationale:\s*/i, "").trim();
 
-Given a single expressive vibe word, suggest exactly four things that match that vibe in a way that feels unexpected, slightly wild, but always joyful and fun for all involved.
-
-Return the following four items — and all four must be included:
-
-1. A wine (include varietal, winery, and year)
-2. A music album (artist and album title)
-3. A paired or group activity (playful, suggestive, not explicit)
-4. A board game (real or made-up — but must sound fun and fit the vibe)
-
-Respond in this exact format:
-
-Wine:  
-Album:  
-Activity:  
-Board Game:  
-
-The vibe is: ${vibe}
-`;
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 1.0,
-      }),
-    });
-
-    const data = await response.json();
-    const output = data.choices?.[0]?.message?.content || "";
-
-    // Log to Supabase
-    await supabase.from("vibe_recs").insert([
+    // Step 4: Save the new recommendation to Supabase
+    const { error: insertError } = await supabase.from("vibe_recs").insert([
       {
-        mood_text: originalUserInput,
-        derived_vibe: vibe,
-        raw_output: output.trim(),
+        vibe: normalizedVibe,
+        category,
+        recommendation,
+        rationale,
+        user_input: userInput,
+        source: "gpt",
       },
     ]);
 
-    // Return full raw output (for display/email)
-    return { raw: output.trim() };
+    if (insertError) {
+      console.error(`❌ Supabase insert error for ${category}:`, insertError.message);
+    }
 
-  } catch (err) {
-    console.error("Error generating vibe recs:", err);
-    return { raw: "(something went wrong — no vibe recs available)" };
+    // Step 5: Add result to the results object
+    results[category] = {
+      recommendation,
+      rationale,
+      source: "gpt",
+    };
   }
+
+  return results;
 }
