@@ -6,8 +6,9 @@ import { CATEGORY_OPTIONS } from "./constants/categoryOptions"; // adjust path a
 function App() {
   const [input, setInput] = useState("");
   const [vibe, setVibe] = useState("");
-  
-  const [selectedTypes, setSelectedTypes] = useState([]);  
+  const ENABLED_CATEGORIES = CATEGORY_OPTIONS.filter(c => c.isEnabled);
+
+  const [selectedTypes, setSelectedTypes] = useState([]);
 
   const canSubmit = input.trim().length > 0 && selectedTypes.length > 0;
 
@@ -51,7 +52,7 @@ function App() {
           />
           
           <div className="flex flex-wrap gap-2 mt-4">
-            {CATEGORY_OPTIONS.map(({ key, label, emoji }) => {
+            {ENABLED_CATEGORIES.map(({ key, label, emoji }) => {
               const isSelected = selectedTypes.includes(key);
               return (
                 <button
