@@ -28,6 +28,8 @@ export async function getRecsForTypes(vibe, selectedTypes, userInput, regenerate
           rationale: data[0].rationale,
           source: "library",
           id: data[0].id,
+          likes: data[0].likes,
+          dislikes: data[0].dislikes,
           created_at: data[0].created_at,
         };
         continue; // Skip to next category
@@ -44,16 +46,25 @@ export async function getRecsForTypes(vibe, selectedTypes, userInput, regenerate
     const rationale = rationaleLine?.replace(/^2\.?\s*Rationale:\s*/i, "").trim();
 
     // Step 4: Save the new recommendation to Supabase
-    const { error: insertError } = await supabase.from("vibe_recs").insert([
-      {
-        vibe: normalizedVibe,
-        category,
-        recommendation,
-        rationale,
-        user_input: userInput,
-        source: "gpt",
-      },
-    ]);
+    const { data, error: insertError } = await supabase
+      .from("vibe_recs")
+      .insert([
+        {
+          vibe: normalizedVibe,
+          category,
+          recommendation,
+          rationale,
+          user_input: userInput,
+          likes: 0,
+          dislikes: 0,
+          source: "gpt",
+        },
+      ])
+      .select("id");
+
+    const insertedId = data?.[0]?.id || null;
+    const insertedLikes = data?.[0]?.likes || null;
+    const insertedDislikes = data?.[0]?.dislikes || null;
 
     if (insertError) {
       console.error(`❌ Supabase insert error for ${category}:`, insertError.message);
@@ -61,8 +72,11 @@ export async function getRecsForTypes(vibe, selectedTypes, userInput, regenerate
 
     // Step 5: Add result to the results object
     results[category] = {
+      id: insertedId,
       recommendation,
       rationale,
+      likes: insertedLikes,
+      dislikes: insertedDislikes,
       source: "gpt",
     };
   }

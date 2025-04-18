@@ -1,16 +1,39 @@
 import { useEffect, useState } from "react";
 import { getRecsForTypes } from "../utils/generateRecs";
 import { CATEGORY_OPTIONS } from "../constants/categoryOptions";
+import { getUserVotes, setUserVote } from "../utils/voteStorage";
+import { updateVoteCount } from "../utils/voteActions";
 
 function Results({ vibe, userInput, selectedTypes, onReset }) {
   const [recs, setRecs] = useState(null);
   const [regenCount, setRegenCount] = useState(0); // 🔁 for forcing refresh
-  const normalizedVibe = vibe.toLowerCase().trim();
   const ENABLED_CATEGORIES = CATEGORY_OPTIONS.filter(c => c.isEnabled);
+  const [votePing, setVotePing] = useState(0); // top of Results
   
   const getCategoryMeta = (key) =>
     ENABLED_CATEGORIES.find((c) => c.key === key) || { label: key, emoji: "✨" };
 
+  function handleVote(recId, direction) {
+    const currentVotes = getUserVotes();
+    const current = currentVotes[recId];
+
+    let newDirection = null;
+
+    if (current === direction) {
+      // Toggle off
+      newDirection = null;
+      updateVoteCount(recId, direction, -1);
+    } else {
+      if (current) {
+        updateVoteCount(recId, current, -1);
+      }
+      updateVoteCount(recId, direction, 1);
+      newDirection = direction;
+    }
+
+    setUserVote(recId, newDirection);
+    setVotePing((prev) => prev + 1); // force re-evaluation
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +66,7 @@ function Results({ vibe, userInput, selectedTypes, onReset }) {
     );
   }  
   
-  const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1);  
+  const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
   const body = `I'm feeling ${vibe}!\n\n${recs.raw}`;
 
@@ -60,6 +83,7 @@ function Results({ vibe, userInput, selectedTypes, onReset }) {
         <div className="grid gap-6 grid-cols-1">
           {Object.entries(recs).map(([categoryKey, recData]) => {
             const { label, emoji, purchaseUrlBase } = getCategoryMeta(categoryKey);
+            const userVote = getUserVotes()[recData.id]; // "up", "down", or undefined
 
             return (
               <div
@@ -77,9 +101,30 @@ function Results({ vibe, userInput, selectedTypes, onReset }) {
 
                 <p className="text-sm italic text-gray-600">{recData.rationale}</p>
 
-                <p className="text-xs mt-4 text-right text-gray-400">
-                  Source: {recData.source === "gpt" ? "Generated" : "From Library"}
-                </p>
+                <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleVote(recData.id, "up")}
+                      className={`text-2xl transition transform ${
+                        userVote === "up" ? "grayscale-0 scale-110" : "grayscale"
+                      }`}
+                    >
+                      👍
+                    </button>
+
+                    <button
+                      onClick={() => handleVote(recData.id, "down")}
+                      className={`text-2xl transition transform ${
+                        userVote === "down" ? "grayscale-0 scale-110" : "grayscale"
+                      }`}
+                    >
+                      👎
+                    </button>
+                  </div>
+                
+                <div>Source: {recData.source === "gpt" ? "Generated" : "From Library"}</div>
+                
+                </div>
               </div>
             );
           })}
